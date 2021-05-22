@@ -9,13 +9,13 @@
 2. ინფორმაციის შეგროვების მერე დავადგინოთ სტატისტიკური მახასიათებლები ავტორების შესახებ:
 - სულ რამდენი ავტორია ვებსაიტზე
 - რომელ ავტორის რამდენი გამონათქვამი ეკუთვნის
-	დამუშავებული ინფორმაცია ჩავწეროთ ფაილურ სისტემაში JSON ფორმატში.
+    დამუშავებული ინფორმაცია ჩავწეროთ ფაილურ სისტემაში JSON ფორმატში.
 
-3. დავადგინოთ სტატისტიკური მახასიათებლები ტააგების შესახებ:
+3. დავადგინოთ სტატისტიკური მახასიათებლები ტაგების შესახებ:
 - სულ რამდენი ტაგი შეგვხვდა ვებსაიტზე
 - თითოეული ტაგი რამდენჯერ გვხვდება
 - 5 ყველაზე პოპულარული ტაგი
-	დამუშავებული ინფორმაცია ჩავწეროთ ფაილურ სისტემაში JSON ფორმატში.
+    დამუშავებული ინფორმაცია ჩავწეროთ ფაილურ სისტემაში JSON ფორმატში.
 """
 import json
 from urllib.parse import urljoin
@@ -68,6 +68,59 @@ class DataScraper:
         # pprint(self.results)
 
 
+def load_json(fname):
+    with open(fname, "r") as file:
+        return json.load(file)
+
+
+def dump_json(fname, data):
+    with open(fname, "w") as file:
+        json.dump(data, file, indent=4)
+
+
+def generate_author_stats(filename):
+    data = load_json(filename)
+    authors_dict = dict()
+    for doc in data:
+        author = doc.get("author")
+        if author in authors_dict:
+            authors_dict[author] = authors_dict[author] + 1
+        else:
+            authors_dict[author] = 1
+    result = {
+        "author_count": len(authors_dict.keys()),
+        "stats": authors_dict
+    }
+    dump_json("authors_stats.json", result)
+
+
+def generate_tags_stats(filename):
+    data = load_json(filename)
+    tags_dict = dict()
+    for doc in data:
+        tags = doc.get("tags", [])
+        for tag in tags:
+            if tag in tags_dict:
+                tags_dict[tag] += 1
+            else:
+                tags_dict[tag] = 1
+    tag_count = len(tags_dict.keys())
+
+    sorted_dict = sorted(tags_dict.items(), key=lambda item: item[1], reverse=True)
+    top_5 = sorted_dict[:5]
+    top_5 = [k for k, _ in top_5]
+
+    result = {
+        "tag_count": tag_count,
+        "stats": tags_dict,
+        "top_5_tag": top_5
+    }
+
+    dump_json("tags_stats.json", result)
+
+
 if __name__ == '__main__':
     data_scraper = DataScraper()
     data_scraper.load_data()
+    generate_author_stats("result.json")
+    generate_tags_stats("result.json")
