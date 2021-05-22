@@ -90,6 +90,59 @@ class DataScraper:
         return self.results
 
 
+def load_json(fname):
+    with open(fname, "r") as file:
+        return json.load(file)
+
+
+def dump_json(fname, data):
+    with open(fname, "w") as file:
+        json.dump(data, file, indent=4)
+
+
+def create_authors_stats(filename):
+    data = load_json(filename)
+    authors_dict = dict()
+    for document in data:
+        author = document.get("author")
+        if author not in authors_dict:
+            authors_dict[author] = 1
+        else:
+            authors_dict[author] = authors_dict[author] + 1
+    author_count = len(authors_dict.keys())
+    result = {
+        "author_count": author_count,
+        "stats": authors_dict
+    }
+    dump_json("author_stats.json", result)
+
+
+def create_tags_stats(filename):
+    data = load_json(filename)
+    stats_dict = {}
+    for document in data:
+        tags = document.get("tags", [])
+        for tag in tags:
+            if tag in stats_dict:
+                stats_dict[tag] += 1
+            else:
+                stats_dict[tag] = 1
+    tags_count = len(stats_dict.keys())
+
+    sorted_tags = sorted(stats_dict.items(), key=lambda item: item[1], reverse=True)
+    top_5 = sorted_tags[:5]
+    top_5 = [k for k, _ in top_5]
+
+    result = {
+        "tags_count": tags_count,
+        "stats": stats_dict,
+        "top_5_tag": top_5
+    }
+    dump_json("tags_stats.json", result)
+
+
 if __name__ == '__main__':
     data_scraper = DataScraper("result.json")
     data_scraper.load_data()
+    create_authors_stats("result.json")
+    create_tags_stats("result.json")
